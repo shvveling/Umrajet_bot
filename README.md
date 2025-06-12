@@ -1,20 +1,13 @@
-# UmraJet Telegram Bot 🇸🇦
+# UmraJet Premium Telegram Bot 🇸🇦
 
-Ushbu bot `aiogram` yordamida yozilgan va professional marketing uchun tayyorlangan.
+📦 Vizalar, 🕌 Tasreh, 🚄 HHR, 🍽 Ovqat va boshqa xizmatlar bilan premium Telegram bot.
 
-## Xususiyatlar:
-- 24/7 ishlaydi (Railway yoki Render orqali)
-- Slip rejimga tushmaydi
-- Til tanlash menyusi
-- Admin tekshiruvi
-- Aiogram 2.25.1
+## Xususiyatlar
+- Foydalanuvchilar uchun qulay menyu
+- Managerlar va kanallar avtomatik ko‘rsatiladi
+- Buyurtmalar avtomatik guruhga yuboriladi
+- Kartalar va kripto orqali to‘lovlar
 
-## Ishga tushirish:
+## Ishga tushirish
+`.env` faylga quyidagilarni qo‘shing:
 
-```bash
-pip install -r requirements.txt
-python bot.py
-```
-
-## Konfiguratsiya:
-- `config.py` ichida BOT_TOKEN va ADMIN foydalanuvchilarni moslang.
