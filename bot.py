@@ -60,8 +60,8 @@ services = {
         "title": "🕋 Umra Paketlari",
         "desc": (
             "🌟 <b>Umra Paketlari bilan Orzularingizni Ro‘yobga Chiqarish Vaqti Keldi!</b>\n\n"
-            "🔸 <b>Oddiy Paket</b> — $1100 dan boshlanadi\n"
-            "🔸 <b>VIP Paket</b> — $2000 dan yuqori\n\n"
+            "🔸 <b>Oddiy Paket</b> — $1200 dan boshlanadi\n"
+            "🔸 <b>VIP Paket</b> — $1800 dan yuqori\n\n"
             "✅ Paketga quyidagilar kiradi:\n"
             "- Komfortli mehmonxona joylashuvi\n"
             "- Shaxsiy transport va ekskursiyalar\n"
@@ -89,9 +89,9 @@ services = {
         "title": "🌙 Ravza Ruxsatnomalari",
         "desc": (
             "🌟 <b>Maxsus Ravza Ruxsatnomalari Xizmati</b>\n\n"
-            "🎟️ Vizasi borlarga — <b>15 SAR</b>\n"
-            "🎟️ Vizasi yo‘qlarga — <b>20 SAR</b>\n\n"
-            "Guruhlar uchun chegirmalar mavjud.\n"
+            "🎟️ Viza berilsa — <b>15 SAR</b>\n"
+            "🎟️ Viza berilmasa — <b>20 SAR</b>\n\n"
+            "Bu narx dona uchun guruhlar uchun chegirmalar mavjud.\n"
             "Sizni Ravzada qulay va xavfsiz dam olish kutmoqda.\n"
             "Hozir bog‘laning, imkoniyatni qo‘ldan boy bermang!"
         ),
