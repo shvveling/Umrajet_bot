@@ -40,7 +40,6 @@ main_menu_kb.add(
     "🚆 Po‘ezd Biletlar", "✈️ Aviabiletlar",
     "🍽️ Guruh Ovqatlar", "🤝 Hamkorlik", "☕ Donat"
 )
-)
 
 back_cancel_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
 back_cancel_kb.add("🔙 Orqaga", "❌ Bekor qilish")
