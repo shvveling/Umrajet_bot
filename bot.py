@@ -1,241 +1,348 @@
-# UmraJet Telegram Bot (faqat O'zbek tili)
-# Premium to'liq versiya - bot.py (yakuniy versiya)
-
+import os
+import logging
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-import logging
-import os
 from dotenv import load_dotenv
 
-# === LOAD ENV ===
+# --- 1. .env dan token va adminlarni yuklash ---
 load_dotenv()
-API_TOKEN = os.getenv('BOT_TOKEN')
-GROUP_CHAT_ID = int(os.getenv('GROUP_CHAT_ID'))
-ADMINS = ['@vip_arabiy', '@V001VB']
-CHANNELS = ['@umrajet', '@the_ravza']
 
-CARD_INFO = """
-💳 <b>To'lov uchun kartalar:</b>
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(",")))  # misol: "123456,654321"
+GROUP_ID = int(os.getenv("GROUP_ID", "0"))
 
-🇺🇿 UZCARD:
-1️⃣ 8600 0304 9680 2624 (Khamidov Ibodulloh)
-2️⃣ 5614 6822 1222 3368 (Khamidov Ibodulloh)
+if not BOT_TOKEN or not ADMIN_IDS or not GROUP_ID:
+    logging.error("❌ BOT_TOKEN, ADMIN_IDS yoki GROUP_ID .env faylida noto‘g‘ri yoki bo‘sh!")
+    exit()
 
-🇺🇿 HUMO:
-🔢 9860 1001 2621 9243 (Khamidov Ibodulloh)
-
-🌍 VISA:
-💳 4140 8400 0184 8680
-💳 4278 3100 2389 5840
-
-💰 Krypto:
-USDT (TRC20): TLGiUsNzQ8n31x3VwsYiWEU97jdftTDqT3
-ETH (BEP20): 0xa11fb72cc1ee74cfdaadb25ab2530dd32bafa8f8
-BTC (BEP20): 0xa11fb72cc1ee74cfdaadb25ab2530dd32bafa8f8
-
-🧾 To‘lovni amalga oshirgach, albatta chekni yuboring.
-"""
-
-# === LOGGING ===
+# --- 2. Logger sozlash ---
 logging.basicConfig(level=logging.INFO)
 
-# === INIT ===
-bot = Bot(token=API_TOKEN)
+# --- 3. Bot va dispatcher ---
+bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# === HOLATLAR ===
-class OrderState(StatesGroup):
-    waiting_for_service = State()
-    waiting_for_quantity = State()
-    waiting_for_contact = State()
+# --- 4. FSM holatlar ---
+class OrderStates(StatesGroup):
+    choosing_service = State()
+    confirming_order = State()
+    choosing_payment = State()
+    waiting_payment = State()
 
-# === MENU ===
-def main_menu():
-    kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add("📋 Xizmatlar", "📦 Buyurtma berish")
-    kb.add("ℹ️ Biz haqimizda", "📞 Bog'lanish")
-    kb.add("💳 To'lov qilish", "🙏 Donat qilish")
+# --- 5. Tugmalar va menyular ---
+main_menu_kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+main_menu_kb.add(
+    "🕋 Umra Paketlari", "🛂 Visa Xizmatlari",
+    "🌙 Ravza Ruxsatnomalari", "🚗 Transport Xizmatlari",
+    "🚆 Po‘ezd Biletlar", "✈️ Aviabiletlar",
+    "🍽️ Guruh Ovqatlar"
+)
+
+back_cancel_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+back_cancel_kb.add("🔙 Orqaga", "❌ Bekor qilish")
+
+def payment_buttons():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    kb.add("💳 Uzcard", "💳 Humo", "💳 Visa", "💰 Crypto", "🔙 Orqaga")
     return kb
 
-# === START ===
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
-    text = """
-🕋 <b>Assalomu alaykum!</b>
+def back_cancel_buttons():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add("🔙 Orqaga", "❌ Bekor qilish")
+    return kb
 
-🎉 <b>UmraJet</b> — Umra safarini osonlashtiruvchi premium xizmatlar boti!
-
-✅ Vizalar, 🕌 Tasreh, 🚄 HHR Train chiptalari
-✅ Ovqatlar, 🍽 Guruhlarga xizmatlar
-✅ 💳 Qulay to‘lovlar
-
-📢 Rasmiy kanallar: @umrajet | @the_ravza
-👨‍💼 Bog'lanish: @vip_arabiy | @V001VB
-
-👇 Quyidagi menyudan kerakli bo‘limni tanlang:
-"""
-    await message.answer(text, reply_markup=main_menu(), parse_mode="HTML")
-
-# === XIZMATLAR ===
-@dp.message_handler(text="📋 Xizmatlar")
-async def services_list(message: types.Message):
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("🕋 Umra Paketlari", callback_data="umra"),
-        InlineKeyboardButton("🕌 Ravza Ziyorati", callback_data="ravza"),
-        InlineKeyboardButton("🛂 Saudiya Vizalari", callback_data="viza"),
-        InlineKeyboardButton("🚄 HHR Poezdlari", callback_data="train"),
-        InlineKeyboardButton("🍽 Ovqat Xizmatlari", callback_data="food"),
-        InlineKeyboardButton("🙏 Donat", callback_data="donate")
-    )
-    await message.answer("👇 Quyidagi xizmatlardan birini tanlang:", reply_markup=markup)
-
-@dp.callback_query_handler(lambda c: c.data in ['umra', 'ravza', 'viza', 'train', 'food', 'donate'])
-async def service_details(call: types.CallbackQuery):
-    info = {
-        'umra': """
-🕋 <b>Umra Paketlari</b>
-
-• Standart: <b>1200$</b>
-• VIP: <b>1800$ dan</b>
-
-✅ Vizalar, mehmonxona, transport va qo‘llab-quvvatlov xizmati kiritilgan.
-
-👨‍💼 @vip_arabiy | @V001VB
-📢 @umrajet | @the_ravza
-""",
-        'ravza': """
-🕌 <b>Ravza Ziyorati (Tasreh)</b>
-
-• Vizali: <b>15 SAR/dona</b>
-• Vizasiz: <b>20 SAR/dona</b>
-• Guruhlarga maxsus narxlar mavjud.
-
-📌 Faqat <b>tasreh</b> xizmatiga vizali/vizasiz farqi mavjud.
-
-👨‍💼 @vip_arabiy | @V001VB
-📢 @umrajet | @the_ravza
-""",
-        'viza': """
-🛂 <b>Saudiya Vizalari</b>
-
-• Umra Viza: <b>160$</b>
-• Turist Viza: <b>120$</b>
-• Guruhlarga maxsus chegirmalar
-
-👨‍💼 @vip_arabiy | @V001VB
-📢 @umrajet | @the_ravza
-""",
-        'train': """
-🚄 <b>HHR Poezd Yo‘nalishlari</b>
-
-• Makkah ↔ Madinah
-• Makkah ↔ Jeddah ↔ Madinah
-• Jeddah ↔ Makkah ↔ Madinah
-
-⏱ Harakat jadvaliga muvofiq chipta bron qilinadi.
-
-👨‍💼 @vip_arabiy | @V001VB
-📢 @umrajet | @the_ravza
-""",
-        'food': """
-🍽 <b>Ovqat Xizmatlari</b>
-
-• Guruhlarga alohida menyular
-• 3 mahal, yoki to‘plam asosida
-• Halol va sifatli ovqatlar
-
-👨‍💼 @vip_arabiy | @V001VB
-📢 @umrajet | @the_ravza
-""",
-        'donate': CARD_INFO
+# --- 6. Xizmatlar tavsifi (premium marketing uslubida) ---
+services = {
+    "umra_paket": {
+        "title": "🕋 Umra Paketlari",
+        "desc": (
+            "🌟 <b>Umra Paketlari bilan Orzularingizni Ro‘yobga Chiqarish Vaqti Keldi!</b>\n\n"
+            "🔸 <b>Oddiy Paket</b> — $1100 dan boshlanadi\n"
+            "🔸 <b>VIP Paket</b> — $2000 dan yuqori\n\n"
+            "✅ Paketga quyidagilar kiradi:\n"
+            "- Komfortli mehmonxona joylashuvi\n"
+            "- Shaxsiy transport va ekskursiyalar\n"
+            "- Maxsus guruh ovqatlar\n"
+            "- 24/7 qo‘llab-quvvatlash va ekspert maslahatlari\n\n"
+            "Biz bilan sayohatingiz qulay, xavfsiz va unutilmas bo‘ladi! "
+            "Orzularingizga yaqinlashing, bugun buyurtma bering!"
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "visa": {
+        "title": "🛂 Visa Xizmatlari",
+        "desc": (
+            "🛂 <b>Tez va Ishonchli Visa Xizmati!</b>\n\n"
+            "⏰ Ish jarayoni tez va oson\n"
+            "💰 Narxlar:\n"
+            "- Turist Visa: <b>$120</b>\n"
+            "- Umra Visa: <b>$160</b>\n\n"
+            "Vizangizni ishonchli qo‘llarga topshiring — qolganini biz bajaramiz.\n"
+            "Bugun murojaat qiling, tezroq natijaga erishing!"
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "ravza": {
+        "title": "🌙 Ravza Ruxsatnomalari",
+        "desc": (
+            "🌟 <b>Maxsus Ravza Ruxsatnomalari Xizmati</b>\n\n"
+            "🎟️ Vizasi borlarga — <b>15 SAR</b>\n"
+            "🎟️ Vizasi yo‘qlarga — <b>20 SAR</b>\n\n"
+            "Guruhlar uchun chegirmalar mavjud.\n"
+            "Sizni Ravzada qulay va xavfsiz dam olish kutmoqda.\n"
+            "Hozir bog‘laning, imkoniyatni qo‘ldan boy bermang!"
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "transport": {
+        "title": "🚗 Transport Xizmatlari",
+        "desc": (
+            "🚐 <b>Shaxsiy va Guruh Transport Xizmatlari</b>\n\n"
+            "✔️ Avtobuslar, taksilar va VIP transportlar\n"
+            "✔️ Qulay va ishonchli yo‘lovchi tashish\n\n"
+            "Narx va qo‘shimcha ma’lumot uchun managerlarimizga murojaat qiling.\n"
+            "Sayohatingiz uchun eng qulay transportni biz bilan tanlang!"
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "train": {
+        "title": "🚆 Po‘ezd Biletlar",
+        "desc": (
+            "🚄 <b>Xavfsiz va qulay po‘ezd safarlari!</b>\n\n"
+            "Mashhur yo‘nalishlar:\n"
+            "- Madina – Makka\n"
+            "- Riyadh – Dammam\n\n"
+            "Narxlar yo‘nalishga qarab o‘zgaradi.\n"
+            "Qo‘shimcha ma’lumot va bronlash uchun managerlarga murojaat qiling."
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "avia": {
+        "title": "✈️ Aviabiletlar",
+        "desc": (
+            "🌍 <b>Dunyo bo‘ylab eng qulay va arzon aviabiletlar!</b>\n\n"
+            "Siz tanlagan manzilga eng maqbul chiptalarni topamiz.\n"
+            "Qo‘shimcha ma’lumot uchun managerlarimizga yozing."
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "food": {
+        "title": "🍽️ Guruh Ovqatlar",
+        "desc": (
+            "🥘 <b>Mahalliy va xalqaro taomlar guruhlar uchun tayyorlanadi.</b>\n\n"
+            "Sifatli va xilma-xil menyu, shaxsiy yondashuv.\n"
+            "Savollar uchun managerlarga murojaat qiling.\n"
+            "Sizning qulayligingiz biz uchun muhim!"
+        ),
+        "managers": ["@vip_arabiy", "@V001VB"]
     }
-    await call.message.answer(info[call.data], parse_mode="HTML")
-    await call.answer()
+}
+    "hamkorlik": {
+        "title": "🤝 Hamkorlik",
+        "desc": (
+            "🤝 <b>Umra Jet bilan hamkorlik qilishni xohlaysizmi?</b>\n\n"
+            "💼 Biz bilan ishlash orqali siz savobli ish qilibgina qolmay, barakali daromadga ham ega bo‘lasiz:\n\n"
+            "🔹 Mahalliy agentlar va jamoatchilar uchun eksklyuziv shartlar\n"
+            "🔹 Har bir jalb qilingan mijoz uchun pul ishlang (affiliate linklar orqali yoki bevosita ro‘yxatlar orqali)\n"
+            "🔹 Yangi sheriklar uchun promo materiallar va shaxsiy qo‘llab-quvvatlash\n"
+            "🔹 Telegram orqali hisob-kitoblar va monitoring tizimi\n\n"
+            "📈 Bizning yondashuv: <i>“Halollik, baraka va uzoq muddatli sheriklik”</i>\n\n"
+            "📲 Barcha tafsilotlar uchun murojaat qiling:\n👉 @vip_arabiy"
+        ),
+        "managers": ["@vip_arabiy"]
+    },
+    "donat": {
+        "title": "☕ Donat",
+        "desc": (
+            "☕ <b>Bizni qo‘llab-quvvatlang!</b>\n\n"
+            "Agar xizmatlarimiz sizga foydali bo‘lgan bo‘lsa yoki bu bot orqali Umraga borish imkoniga ega bo‘lgan bo‘lsangiz — kichik bir donat orqali bizni ilhomlantiring.\n\n"
+            "💌 Donatingiz orqali yana ko‘plab insonlarga xizmat qilish imkoniga ega bo‘lamiz.\n\n"
+            "💳 <b>To‘lov usullari:</b>\n"
+            "- Uzcard / Humo / Visa\n"
+            "- USDT TRC-20 (Crypto)\n\n"
+            "👇 Quyidagi tugmalardan birini tanlang va chekni yuboring:\n"
+            "<i>Donat ixtiyoriy bo‘lib, xizmat haqi hisoblanmaydi.</i>"
+        ),
+        "managers": ["@vip_arabiy"]
+    }
 
-# === TO'LOV ===
-@dp.message_handler(text="💳 To'lov qilish")
-async def payment_info(message: types.Message):
-    await message.answer(CARD_INFO, parse_mode="HTML")
+# --- 7. To‘lov ma’lumotlari ---
+payments = {
+    "Uzcard": (
+        "💳 <b>Uzcard to‘lovlari:</b>\n\n"
+        "1️⃣ <code>8600 0304 9680 2624</code> (Khamidov Ibodulloh)\n"
+        "2️⃣ <code>5614 6822 1222 3368</code> (Khamidov Ibodulloh)"
+    ),
+    "Humo": (
+        "💳 <b>Humo to‘lovlari:</b>\n\n"
+        "<code>9860 1001 2621 9243</code> (Khamidov Ibodulloh)"
+    ),
+    "Visa": (
+        "💳 <b>Visa to‘lovlari:</b>\n\n"
+        "1️⃣ <code>4140 8400 0184 8680</code> (Khamidov Ibodulloh)\n"
+        "2️⃣ <code>4278 3100 2389 5840</code> (Khamidov Ibodulloh)"
+    ),
+    "Crypto": (
+        "💰 <b>Kripto to‘lovlari:</b>\n\n"
+        "USDT (Tron TRC20):\n<code>TLGiUsNzQ8n31x3VwsYiWEU97jdftTDqT3</code>\n\n"
+        "ETH (BEP20):\n<code>0xa11fb72cc1ee74cfdaadb25ab2530dd32bafa8f8</code>\n\n"
+        "BTC (BEP20):\n<code>0x8e9a10874f910244932420ba521f0c92e67414d2</code>"
+    )
+}
 
-# === DONAT ===
-@dp.message_handler(text="🙏 Donat qilish")
-async def donate_info(message: types.Message):
-    await message.answer(CARD_INFO, parse_mode="HTML")
+# --- 8. Qo‘shimcha o‘zgaruvchilar ---
+services_titles = [s["title"] for s in services.values()]
 
-# === BIZ HAQIMIZDA ===
-@dp.message_handler(text="ℹ️ Biz haqimizda")
-async def about_us(message: types.Message):
-    text = """
-<b>UmraJet — Umra safarini osonlashtiruvchi premium xizmat!</b>
+# --- 9. Handlerlar ---
 
-✅ Tezkor xizmat
-✅ Tasdiqlangan vizalar
-✅ Guruhlarga chegirmalar
-✅ Doimiy yordam va maslahat
-✅ Xalqaro to‘lovlar
+@dp.message_handler(commands=["start", "help"])
+async def start_handler(message: types.Message):
+    text = (
+        f"👋 Assalomu alaykum, {message.from_user.full_name}!\n\n"
+        f"<b>UmraJet Botga xush kelibsiz! 🌟</b>\n\n"
+        "Quyidagi xizmatlardan birini tanlang:\n\n"
+        "🕋 <b>Umra Paketlari</b>\n"
+        "🛂 <b>Visa Xizmatlari</b>\n"
+        "🌙 <b>Ravza Ruxsatnomalari</b>\n"
+        "🚗 <b>Transport Xizmatlari</b>\n"
+        "🚆 <b>Po‘ezd Biletlar</b>\n"
+        "✈️ <b>Aviabiletlar</b>\n"
+        "🍽️ <b>Guruh Ovqatlar</b>\n\n"
+        "📢 <b>Rasmiy kanallarimiz:</b>\n"
+        "🔹 <a href='https://t.me/umrajet'>@umrajet</a>\n"
+        "🔹 <a href='https://t.me/the_ravza'>@the_ravza</a>\n\n"
+        "👨‍💼 <b>Bog‘lanish uchun mas’ul managerlar:</b>\n"
+        "🔹 <a href='https://t.me/vip_arabiy'>@vip_arabiy</a> — Asosiy manager\n"
+        "🔹 <a href='https://t.me/V001VB'>@V001VB</a> — Zaxira manager"
+    )
+    await message.answer(text, reply_markup=main_menu_kb, parse_mode="HTML", disable_web_page_preview=True)
+    await OrderStates.choosing_service.set()
 
-📢 Kanallar: @umrajet | @the_ravza
-📞 Bog‘lanish: @vip_arabiy | @V001VB
-"""
-    await message.answer(text, parse_mode="HTML")
+@dp.message_handler(lambda m: m.text in services_titles, state=OrderStates.choosing_service)
+async def show_service_handler(message: types.Message, state: FSMContext):
+    service = next((v for v in services.values() if v["title"] == message.text), None)
+    if service is None:
+        await message.answer("❌ Noto‘g‘ri xizmat tanlandi. Iltimos, menyudan tanlang.")
+        return
+    desc = service["desc"]
+    managers = ", ".join(service["managers"])
+    text = f"{desc}\n\n👨‍💼 <b>Managerlar:</b> {managers}\n\n" \
+           "Xizmatdan foydalanishni tasdiqlaysizmi?"
+    await message.answer(text, reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("✅ Tasdiqlayman", "🔙 Orqaga"), parse_mode="HTML")
+    await state.update_data(service=service["title"])
+    await OrderStates.next()  # confirming_order
 
-# === BOG'LANISH ===
-@dp.message_handler(text="📞 Bog'lanish")
-async def contact_info(message: types.Message):
-    text = """
-💬 <b>Ma'mur bilan bog'lanish:</b>
+@dp.message_handler(lambda m: m.text == "✅ Tasdiqlayman", state=OrderStates.confirming_order)
+async def confirm_order_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    service = data.get("service")
+    if not service:
+        await message.answer("❌ Xizmat tanlanmadi. Iltimos, boshidan tanlang.")
+        await OrderStates.choosing_service.set()
+        return
+    text = (
+        "To‘lov usulini tanlang:\n\n"
+        "💳 Uzcard\n"
+        "💳 Humo\n"
+        "💳 Visa\n"
+        "💰 Crypto"
+    )
+    await message.answer(text, reply_markup=payment_buttons())
+    await OrderStates.next()  # choosing_payment
 
-👤 @vip_arabiy
-👤 @V001VB
+@dp.message_handler(lambda m: m.text in ["💳 Uzcard", "💳 Humo", "💳 Visa", "💰 Crypto"], state=OrderStates.choosing_payment)
+async def payment_method_handler(message: types.Message, state: FSMContext):
+    payment_method = message.text.strip()
+    if payment_method == "💳 Uzcard":
+        key = "Uzcard"
+    elif payment_method == "💳 Humo":
+        key = "Humo"
+    elif payment_method == "💳 Visa":
+        key = "Visa"
+    elif payment_method == "💰 Crypto":
+        key = "Crypto"
+    else:
+        await message.answer("❌ Noto‘g‘ri to‘lov usuli tanlandi.")
+        return
 
-📢 Kanal: @umrajet
-📢 Kanal: @the_ravza
-"""
-    await message.answer(text, parse_mode="HTML")
+    payment_info = payments.get(key)
+    if not payment_info:
+        await message.answer("❌ To‘lov ma’lumotlari topilmadi.")
+        return
 
-# === BUYURTMA BERISH ===
-@dp.message_handler(text="📦 Buyurtma berish")
-async def order_start(message: types.Message):
-    await message.answer("📝 Qaysi xizmatni buyurtma bermoqchisiz? (Masalan: Umra, Ravza, Viza, Ovqat...)")
-    await OrderState.waiting_for_service.set()
+    await message.answer(
+        payment_info + "\n\nTo‘lovni amalga oshirgach, tasdiqlash uchun xabar yuboring.",
+        reply_markup=back_cancel_buttons(),
+        parse_mode="HTML"
+    )
+    await state.update_data(payment_method=key)
+    await OrderStates.waiting_payment.set()
 
-@dp.message_handler(state=OrderState.waiting_for_service)
-async def process_service(message: types.Message, state: FSMContext):
-    await state.update_data(service=message.text)
-    await message.answer("📦 Buyurtma miqdorini kiriting (nechta?)")
-    await OrderState.waiting_for_quantity.set()
+@dp.message_handler(lambda m: m.text == "🔙 Orqaga", state="*")
+async def go_back_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == OrderStates.confirming_order.state:
+        await OrderStates.choosing_service.set()
+        await message.answer("🔙 Asosiy xizmatlar menyusiga qaytdingiz.", reply_markup=main_menu_kb)
+    elif current_state == OrderStates.choosing_payment.state:
+        await OrderStates.confirming_order.set()
+        await message.answer("🔙 Xizmat tasdiqlash menyusiga qaytdingiz.", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).add("✅ Tasdiqlayman", "🔙 Orqaga"))
+    elif current_state == OrderStates.waiting_payment.state:
+        await OrderStates.choosing_payment.set()
+        await message.answer("🔙 To‘lov usulini tanlash menyusiga qaytdingiz.", reply_markup=payment_buttons())
+    else:
+        await message.answer("🔙 Siz bosh menyudasiz.", reply_markup=main_menu_kb)
+        await OrderStates.choosing_service.set()
 
-@dp.message_handler(state=OrderState.waiting_for_quantity)
-async def process_quantity(message: types.Message, state: FSMContext):
-    await state.update_data(quantity=message.text)
-    await message.answer("📱 Iltimos, telefon raqamingizni yuboring yoki yozing:")
-    await OrderState.waiting_for_contact.set()
+@dp.message_handler(lambda m: m.text == "❌ Bekor qilish", state="*")
+async def cancel_handler(message: types.Message, state: FSMContext):
+    await state.finish()
+    await message.answer("❌ Buyurtma bekor qilindi. Bosh menyuga qaytdingiz.", reply_markup=main_menu_kb)
 
-@dp.message_handler(state=OrderState.waiting_for_contact)
-async def process_contact(message: types.Message, state: FSMContext):
-    user_data = await state.get_data()
-    service = user_data['service']
-    quantity = user_data['quantity']
-    contact = message.text
+@dp.message_handler(state=OrderStates.waiting_payment)
+async def payment_confirmation_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    service_title = data.get("service")
+    payment_method = data.get("payment_method")
+    if not service_title or not payment_method:
+        await message.answer("❌ Ma'lumotlar to‘liq emas. Iltimos, boshidan boshlang.")
+        await state.finish()
+        return
 
-    text = f"""
-📥 <b>Yangi buyurtma:</b>
+    # Adminlarga xabar yuborish
+    service = next((v for v in services.values() if v["title"] == service_title), None)
+    user = message.from_user
+    managers = service["managers"] if service else []
+    text = (
+        f"✅ <b>Yangi buyurtma qabul qilindi!</b>\n\n"
+        f"👤 Foydalanuvchi: <a href='tg://user?id={user.id}'>{user.full_name}</a>\n"
+        f"📱 Telegram: @{user.username if user.username else 'yo‘q'}\n"
+        f"🕋 Xizmat: {service_title}\n"
+        f"💳 To‘lov usuli: {payment_method}\n"
+        f"⏰ Vaqt: {message.date.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        f"📲 Iltimos, tez orada bog‘laning!"
+    )
+    # Guruhga xabar yuborish
+    await bot.send_message(GROUP_ID, text, parse_mode="HTML", disable_web_page_preview=True)
 
-🧾 Xizmat: {service}
-🔢 Miqdori: {quantity}
-📱 Kontakt: {contact}
-👤 Foydalanuvchi: @{message.from_user.username or 'yo‘q'}
-🆔 ID: <code>{message.from_user.id}</code>
-"""
-    await bot.send_message(GROUP_CHAT_ID, text, parse_mode="HTML")
-    await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada menedjerlar siz bilan bog‘lanadi.", reply_markup=main_menu())
+    # Har bir managerga shaxsiy xabar yuborish
+    for mgr_username in managers:
+        try:
+            await bot.send_message(mgr_username, text, parse_mode="HTML", disable_web_page_preview=True)
+        except Exception as e:
+            logging.error(f"Managerga xabar yuborishda xato: {mgr_username} — {e}")
+
+    await message.answer("✅ Buyurtmangiz qabul qilindi! Tez orada managerlarimiz siz bilan bog‘lanadi.", reply_markup=main_menu_kb)
     await state.finish()
 
-# === BOTNI ISHGA TUSHIRISH ===
-if __name__ == '__main__':
+@dp.message_handler()
+async def fallback_handler(message: types.Message):
+    await message.answer("❓ Iltimos, menyudan xizmat tanlang yoki /start komandasini yuboring.", reply_markup=main_menu_kb)
+
+# --- 10. Botni ishga tushurish ---
+if __name__ == "__main__":
+    logging.info("Bot ishga tushmoqda...")
     executor.start_polling(dp, skip_updates=True)
