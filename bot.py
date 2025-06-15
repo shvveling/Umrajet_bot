@@ -140,34 +140,6 @@ services = {
         "managers": ["@vip_arabiy", "@V001VB"]
     }
 }
-    "hamkorlik": {
-        "title": "🤝 Hamkorlik",
-        "desc": (
-            "🤝 <b>Umra Jet bilan hamkorlik qilishni xohlaysizmi?</b>\n\n"
-            "💼 Biz bilan ishlash orqali siz savobli ish qilibgina qolmay, barakali daromadga ham ega bo‘lasiz:\n\n"
-            "🔹 Mahalliy agentlar va jamoatchilar uchun eksklyuziv shartlar\n"
-            "🔹 Har bir jalb qilingan mijoz uchun pul ishlang (affiliate linklar orqali yoki bevosita ro‘yxatlar orqali)\n"
-            "🔹 Yangi sheriklar uchun promo materiallar va shaxsiy qo‘llab-quvvatlash\n"
-            "🔹 Telegram orqali hisob-kitoblar va monitoring tizimi\n\n"
-            "📈 Bizning yondashuv: <i>“Halollik, baraka va uzoq muddatli sheriklik”</i>\n\n"
-            "📲 Barcha tafsilotlar uchun murojaat qiling:\n👉 @vip_arabiy"
-        ),
-        "managers": ["@vip_arabiy"]
-    },
-    "donat": {
-        "title": "☕ Donat",
-        "desc": (
-            "☕ <b>Bizni qo‘llab-quvvatlang!</b>\n\n"
-            "Agar xizmatlarimiz sizga foydali bo‘lgan bo‘lsa yoki bu bot orqali Umraga borish imkoniga ega bo‘lgan bo‘lsangiz — kichik bir donat orqali bizni ilhomlantiring.\n\n"
-            "💌 Donatingiz orqali yana ko‘plab insonlarga xizmat qilish imkoniga ega bo‘lamiz.\n\n"
-            "💳 <b>To‘lov usullari:</b>\n"
-            "- Uzcard / Humo / Visa\n"
-            "- USDT TRC-20 (Crypto)\n\n"
-            "👇 Quyidagi tugmalardan birini tanlang va chekni yuboring:\n"
-            "<i>Donat ixtiyoriy bo‘lib, xizmat haqi hisoblanmaydi.</i>"
-        ),
-        "managers": ["@vip_arabiy"]
-    }
 
 # --- 7. To‘lov ma’lumotlari ---
 payments = {
