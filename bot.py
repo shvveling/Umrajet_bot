@@ -38,7 +38,8 @@ main_menu_kb.add(
     "🕋 Umra Paketlari", "🛂 Visa Xizmatlari",
     "🌙 Ravza Ruxsatnomalari", "🚗 Transport Xizmatlari",
     "🚆 Po‘ezd Biletlar", "✈️ Aviabiletlar",
-    "🍽️ Guruh Ovqatlar"
+    "🍽️ Guruh Ovqatlar", "🤝 Hamkorlik", "☕ Donat"
+)
 )
 
 back_cancel_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -138,6 +139,37 @@ services = {
             "Sizning qulayligingiz biz uchun muhim!"
         ),
         "managers": ["@vip_arabiy", "@V001VB"]
+    },
+    "hamkorlik": {
+        "title": "🤝 Hamkorlik",
+        "desc": (
+            "🤝 <b>Umra Jet bilan barakali hamkorlikka qo‘shiling!</b>\n\n"
+            "💼 Sizda jamoa, auditoriya yoki tanishlar bormi?\n"
+            "U holda bu imkoniyat aynan siz uchun:\n\n"
+            "🔹 Affiliate daromad: Har bir jalb qilingan mijoz uchun pul ishlang\n"
+            "🔹 Tayyor marketing materiallari\n"
+            "🔹 Monitoring: O‘z natijangizni kuzating\n"
+            "🔹 Baraka: Dinga xizmat, duolarga sabab\n\n"
+            "🌐 Bizda chegaralar yo‘q — barcha davlatlardan hamkor bo‘lish mumkin\n\n"
+            "📲 Batafsil ma’lumot uchun yozing:\n👉 @vip_arabiy"
+        ),
+        "managers": ["@vip_arabiy"]
+    },
+    "donat": {
+        "title": "☕ Donat",
+        "desc": (
+            "☕ <b>Botimizni yaxshi ko‘rgan bo‘lsangiz, kichik donat qiling!</b>\n\n"
+            "💝 Bu orqali siz:\n"
+            "• Boshqalar ham xizmatlardan foydalana olishiga hissa qo‘shasiz\n"
+            "• Bepul maslahat va xizmatlar kengayishiga sabab bo‘lasiz\n"
+            "• Halol va foydali ishda ishtirok etasiz\n\n"
+            "💳 <b>To‘lovlar:</b>\n"
+            "- Uzcard / Humo / Visa\n"
+            "- USDT (TRC20)\n\n"
+            "<i>Donatingiz kichik bo‘lsa ham — barakasi katta bo‘ladi.</i>\n"
+            "📥 Donat yuborilgach, chekni managerga yuboring:\n👉 @vip_arabiy"
+        ),
+        "managers": ["@vip_arabiy"]
     }
 }
 
